@@ -1,20 +1,15 @@
-const express = require('express');
-const router = express.Router();
+const express = require("express")
+const router = express.Router()
+const customercontroller = require('../controllers/customerController')
+const cardcontroller = require('../controllers/cardController')
 
-const authorController = require('../controllers/authorController')
-const bookController = require('../controllers/bookController')
-const publisherController = require('../controllers/publisherController')
+router.post('/register',customercontroller.createcustomer)
+router.get('/getCustomer',customercontroller.getCustomer)
+router.delete('/customer/:customerId',customercontroller.deleteCustomer)
 
-// Author api
-router.post('/authors', authorController.createAuthor)
-router.get('/authors/:authorId', authorController.fetchAuthorProfile)
+//.......................Card.............
 
-// Book api
-router.post('/books', bookController.createBook)
-router.get('/books', bookController.getBooks)
+router.post('/cardRegister',cardcontroller.createCard)
+router.get('/getcard',cardcontroller.getCard)
 
-// Publisher api
-router.post('/publishers', publisherController.createPublisher)
-
-
-module.exports = router;
+module.exports=router
