@@ -18,7 +18,8 @@ const createCard = async function (req,res){
 
         if (Object.keys(data).length == 0) { return  res.status(400).send({status : false, message : " Please Provide Some data"})}
 
-       
+        const cardCount = await cardmodel.find()
+        data.cardNumber = "C00" + (cardCount.length + 1)
         if(!cardType){ return res.status(400).send({status : false , message : "Please Provide card type"})}
         if( cardType !="REGULAR" && cardType != "SPECIAL"){
             return res.status(400).send({status : false , message : "cardType only in REGULAR/SPECIAL"})  
