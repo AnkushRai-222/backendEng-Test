@@ -1,65 +1,49 @@
 
-const studentModel = require("../model/userSchema")
+const userModel = require("../model/userSchema")
 
-const createAndAddStudent = async function(req,res){
-    try{
-        let data =req.body
-      
-        if(Object.keys(data).length==0)return res.status(400).send({status:false,msg:"can't create user with empty body"})
-       
-        let {name,subject,marks} = data
-
-       if(!name){
-        return res.status(400).send({status:false,message:"name is mandatory"})
-       }
-       if(!subject){
-        return res.status(400).send({status:false,message:"subject is mandatory"})
-       }
-       if(!marks){
-        return res.status(400).send({status:false,message:"name is mandatory"})
-       }     
-     const oldstudent=await studentModel.findOne({name:name,subject:subject,isDeleted:false})
-     if(oldstudent){
-       let  finalMarks=oldstudent.marks+marks
-       const updateData=await studentModel.findOneAndUpdate({name:name,subject:subject},{marks:finalMarks},{new:true})
-      return res.status(200).send({status:true,message:"Sucess",data:updateData})
-     }
-        const studentData=await studentModel.create(data)
-        res.status(201).send({status:true,message:"Sucess",data:studentData})
-         }
-         catch(err){
-             res.status(500).send({status:false ,msg:err.message})
-         }
-}
+//-------------------------------------[ CREATE USER ]---------------------------------------//
+const createUser = async function (req, res) {
+    try {
+      let data = req.body;
+      let file = req.files;
   
+      if (Object.keys(data).length == 0) { return res.status(400).send({ status: false, message: "Please give some data" }); }
+  
+      let { username , email , password ,profilePicture } = data;
+  
+      if (!username) { return res.status(400).send({ status: false, message: "usernameis mandatory" }); }
+      if (!email) { return res.status(400).send({ status: false, message: "Email is mandatory" }); }
+      if (file && file.length == 0) { return res.status(400).send({ status: false, message: "ProfileImage is a mandatory" }); }
+      if (!password) { return res.status(400).send({ status: false, message: "Password is mandatory" }); }
 
-const viewStudent  = async function(req,res){
- try{
-        let data=req.query
-        data.isDeleted=false
-        const studentData=await studentModel.find(data)
-        if(!studentData)return res.status(404).send({status:false ,msg:"NO student found with this query"})
-      return  res.status(200).send({status:true,data:studentData})
-
- }
- catch(err){
-     return   res.status(500).send({status:false ,msg:err.message})
+      if (!validEmail(email)) { return res.status(400).send({ status: false, message: "Please provide correct email" }); }
+      let findEmail = await userModel.findOne({ email });
+      if (findEmail) { return res.status(400).send({ status: false, message: "User with this email already exists" }); }
+      
+      if (!validPassword(password)) { return res.status(400).send({ status: false, message: "Password Should be (8-15) in length with one upperCase, special character and number" }); }
+      
+      
+      //..hashing
+      const saltRounds = 10;
+      const hash = bcrypt.hashSync(password, saltRounds)
+      
+      
+      if (file && file.length > 0) {
+        if (!isValidImg(file[0].originalname)) { return res.status(400).send({ status: false, message:"Please provide image in jpg|gif|png|jpeg|jfif " }); } 
+      }
+      let url = await uploadFile(file[0]);
+      
+      const userData = {
+        username:username , email: email, password: hash
+      }
+      
+      const user = await userModel.create(userData);
+      return res.status(201).send({ status: true, message: "User created successfully", data: user });
+  
     }
-}
-
-const deleteStudentSubject = async (req,res)=>{
-    try{
-        let data=req.params.studentId
-
-        const deletestudent= await studentModel.findOneAndUpdate({_id:data,isDeleted:false},{isDeleted:true,deletedAt:Date.now()})
-        if(!deletestudent)return res.status(404).send({status:false ,message:"NO student found with this Id"})
-
-       return res.status(201).send({status:true,message:"student data deleted successfully"})
-
+    catch (error) {
+      return res.status(500).send({ status: false, message: error.message });
     }
-    catch(err){
-       return  res.status(500).send({status:false ,msg:err.message})
-    }
-}
-
-module.exports = {deleteStudentSubject,viewStudent,createAndAddStudent}
+  }
+  
+module.exports = {createUser}
